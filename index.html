@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Form</title>
+    <style>
+        .form-group {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .form-group input[type="text"] {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .form-group input[type="number"] {
+            width: 100px;
+        }
+
+        .delete-button {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <form id="myForm">
+        <div id="formContainer">
+            <div class="form-group">
+                <input type="text" name="name_owes" placeholder="Name that owes">
+                <input type="text" name="to_name" placeholder="To name">
+                <input type="text" name="amount" placeholder="amount">
+                <!-- <input type="number" step="any" name="amount" placeholder="Amount"> -->
+                <button class="delete-button" onclick="deleteRow(this)">Delete Row</button>
+            </div>
+        </div>
+        <button id="addMoreButton" type="button">Add More</button>
+        <button id="showButton" type="button">Show Output</button>
+    </form>
+
+    <script>
+        const inputs = [];
+
+        function deleteRow(button) {
+            const formContainer = document.getElementById('formContainer');
+            const formGroup = button.parentElement;
+            const index = Array.from(formContainer.children).indexOf(formGroup);
+            inputs.splice(index, 1);
+            formContainer.removeChild(formGroup);
+        }
+
+        document.getElementById('addMoreButton').addEventListener('click', function () {
+            const formContainer = document.getElementById('formContainer');
+            const formGroup = document.createElement('div');
+            formGroup.classList.add('form-group');
+
+            const input1 = document.createElement('input');
+            input1.type = 'text';
+            input1.placeholder = 'Name that owes';
+            input1.name = 'name_owes';
+
+            const input2 = document.createElement('input');
+            input2.type = 'text';
+            input2.placeholder = 'To name';
+            input2.name = 'to_name';
+
+            const input3 = document.createElement('input');
+            input3.type = 'text';
+            // input3.step = 'any';
+            input3.placeholder = 'Amount';
+            input3.name = 'amount';
+
+            const deleteButton = document.createElement('button');
+            deleteButton.classList.add('delete-button');
+            deleteButton.textContent = 'Delete Row';
+            deleteButton.onclick = function () {
+                deleteRow(this);
+            };
+            formGroup.appendChild(input1);
+            formGroup.appendChild(input2);
+            formGroup.appendChild(input3);
+            formGroup.appendChild(deleteButton);
+
+            formContainer.appendChild(formGroup);
+
+            inputs.push({ input1, input2, input3 });
+        });
+
+        document.getElementById('showButton').addEventListener('click', async function () {
+            const formGroups = document.querySelectorAll('.form-group');
+            const data = Array.from(formGroups).map(formGroup => {
+                const nameOwesInput = formGroup.querySelector('input[name="name_owes"]');
+                const toNameInput = formGroup.querySelector('input[name="to_name"]');
+                const amountInput = formGroup.querySelector('input[name="amount"]');
+                return {
+                    name_owes: nameOwesInput.value,
+                    to_name: toNameInput.value,
+                    amount: amountInput.value
+                };
+            });
+            await fetch('/add_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            // const response = await fetch('/get_data');
+            const response = await fetch('/calculate_cash_flow');
+            
+            const responseData = await response.json();
+            let message = '';
+            responseData.forEach((row, index) => {
+                // message += `Row ${index + 1}: Name Owes - ${row.name_owes}, To Name - ${row.to_name}, Amount - ${row.amount}\n`;
+                message += `${row.name_owes} owes $${row.amount}  ${row.to_name} \n`;
+            });
+            alert(message);
+        });
+    </script>
+</body>
+</html>
